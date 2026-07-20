@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dagoretti Kitchen Incubator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0f0a;--sur:#0f1a0f;--pan:#111f11;--brd:#1a3a1a;
+  --grn:#00e676;--gdm:#00c853;--ggl:#00e67640;
+  --amb:#ffab00;--red:#ff1744;--blu:#40c4ff;
+  --txt:#c8e6c9;--mut:#558b2f;--wht:#e8f5e9;--lcd:#0d1f0d;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,230,118,.012) 2px,rgba(0,230,118,.012) 4px);pointer-events:none;z-index:9999;}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:52px;background:var(--sur);border-bottom:1px solid var(--brd);position:sticky;top:0;z-index:100;}
+.brand{font-family:'Share Tech Mono',monospace;color:var(--grn);font-size:13px;letter-spacing:3px;}
+.brand span{color:var(--mut);}
+.ntabs{display:flex;gap:4px;}
+.ntab{padding:5px 16px;border:1px solid transparent;background:none;color:var(--mut);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:2px;}
+.ntab:hover{color:var(--grn);border-color:var(--brd);}
+.ntab.active{color:var(--grn);border-color:var(--grn);background:var(--ggl);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--grn);box-shadow:0 0 8px var(--grn);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.view{display:none;}.view.active{display:block;}
+
+/* ── TERMINAL ── */
+.term-layout{display:grid;grid-template-columns:auto 1fr 300px;gap:20px;padding:28px 20px;max-width:1200px;margin:0 auto;}
+@media(max-width:900px){.term-layout{grid-template-columns:1fr;}}
+
+/* LCD */
+.lcd-unit{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.lcd-housing{background:#1a2a1a;border:3px solid #0d200d;border-radius:12px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,.6);position:relative;min-width:300px;}
+.lcd-housing::before{content:'DAGORETTI-LCD-SIM';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:9px;color:#1a3a1a;letter-spacing:2px;white-space:nowrap;}
+.lcd-screen{background:var(--lcd);border:2px inset #0a180a;border-radius:4px;padding:12px 14px;box-shadow:inset 0 0 20px rgba(0,0,0,.6),0 0 20px rgba(0,230,118,.05);}
+.lcd-row{font-family:'Share Tech Mono',monospace;font-size:16px;height:24px;letter-spacing:1.5px;white-space:nowrap;overflow:hidden;display:flex;align-items:center;transition:color .3s;}
+.lcd-row.cg{color:var(--grn);text-shadow:0 0 8px var(--grn);}
+.lcd-row.ca{color:var(--amb);text-shadow:0 0 8px var(--amb);}
+.lcd-row.cr{color:var(--red);text-shadow:0 0 8px var(--red);}
+.lcd-row.cd{color:#1e4a1e;text-shadow:none;}
+.lcd-div{border:none;border-top:1px solid #0f2a0f;margin:3px 0;}
+.state-bar{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);letter-spacing:2px;padding:3px 0;}
+.sled{width:8px;height:8px;border-radius:50%;transition:all .3s;}
+.sled.idle{background:#1a5c1a;}.sled.active{background:var(--grn);box-shadow:0 0 8px var(--grn);animation:pulse 1s infinite;}.sled.locked{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse .5s infinite;}.sled.error{background:var(--amb);}
+
+/* KEYPAD COL */
+.kp-col{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.kp-lbl{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);letter-spacing:3px;text-transform:uppercase;}
+.pips{display:flex;gap:6px;align-items:center;padding:5px 12px;background:var(--pan);border:1px solid var(--brd);border-radius:6px;}
+.piplbl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:2px;margin-right:4px;}
+.pip{width:12px;height:12px;border-radius:3px;transition:all .3s;}
+.pip.ok{background:var(--grn);border:1px solid var(--grn);box-shadow:0 0 5px var(--grn);}
+.pip.used{background:var(--red);border:1px solid var(--red);box-shadow:0 0 5px var(--red);}
+.pip.gone{background:transparent;border:1px solid #1a3a1a;}
+.pin-box{background:#060f06;border:1px solid var(--brd);border-radius:6px;padding:10px 18px;}
+.pdots{display:flex;gap:10px;justify-content:center;}
+.pd{width:12px;height:12px;border-radius:50%;border:2px solid var(--mut);transition:all .15s;}
+.pd.on{background:var(--grn);border-color:var(--grn);box-shadow:0 0 7px var(--grn);}
+.lock-ban{display:none;padding:12px;border-radius:6px;background:#1a0408;border:1px solid var(--red);text-align:center;}
+.lock-ban.show{display:block;animation:lp 1s ease-in-out infinite;}
+@keyframes lp{0%,100%{border-color:var(--red)}50%{border-color:#440010}}
+.ltitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:3px;margin-bottom:4px;}
+.lcnt{font-family:'Share Tech Mono',monospace;font-size:32px;color:var(--red);text-shadow:0 0 18px var(--red);line-height:1;}
+.lsub{font-family:'Share Tech Mono',monospace;font-size:9px;color:#660010;letter-spacing:2px;margin-top:4px;}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.key{width:60px;height:60px;background:var(--pan);border:1px solid var(--brd);border-radius:6px;color:var(--txt);font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:all .1s;display:flex;align-items:center;justify-content:center;user-select:none;}
+.key:hover{border-color:var(--gdm);color:var(--grn);background:#0f1f0f;}
+.key:active,.key.pressed{background:var(--ggl);border-color:var(--grn);color:var(--grn);transform:scale(.92);}
+.key.clr{color:var(--amb);border-color:#2a2000;}.key.clr:hover{border-color:var(--amb);}
+.key.ent{color:var(--grn);border-color:#0a3a0a;grid-column:span 2;width:100%;font-size:14px;letter-spacing:1px;}.key.ent:hover{border-color:var(--grn);background:var(--ggl);}
+.key.disabled{opacity:.2;cursor:not-allowed;pointer-events:none;}
+.fb{margin-top:4px;padding:8px 12px;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;line-height:1.5;display:none;}
+.fb.show{display:block;}.fb.ok{background:#0a2a0a;border:1px solid var(--grn);color:var(--grn);}
+.fb.err{background:#1a0408;border:1px solid var(--red);color:var(--red);}
+.fb.wrn{background:#1a1000;border:1px solid var(--amb);color:var(--amb);}
+
+/* RIGHT COL */
+.right-col{display:flex;flex-direction:column;gap:14px;}
+.receipt{background:var(--sur);border:1px solid var(--brd);border-radius:8px;overflow:hidden;display:none;}
+.receipt.show{display:block;}
+.rec-hdr{background:var(--pan);padding:8px 12px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center;}
+.rec-ttl{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--grn);letter-spacing:3px;}
+.rec-cls{background:none;border:none;color:var(--mut);cursor:pointer;font-size:15px;}
+.rec-cls:hover{color:var(--red);}
+.rec-body{padding:12px;}
+.rrow{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--brd);}
+.rrow:last-child{border-bottom:none;}
+.rk{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--mut);}
+.rv{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txt);}
+.rv.big{font-size:16px;color:var(--amb);text-shadow:0 0 7px var(--amb);}
+.rv.grn{color:var(--grn);}
+.hist{margin-top:8px;}
+.hist-ttl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:2px;margin-bottom:5px;}
+.hrow{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0f1f0f;font-family:'Share Tech Mono',monospace;font-size:9px;}
+.hrow:last-child{border-bottom:none;}
+.hd{color:var(--mut);}.hdu{color:var(--txt);}.hamt{color:var(--amb);}
+.active-panel{flex:1;}
+.phdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.pttl{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);letter-spacing:3px;text-transform:uppercase;}
+.scard{background:var(--sur);border:1px solid var(--brd);border-radius:6px;padding:10px 12px;margin-bottom:7px;position:relative;}
+.scard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grn);border-radius:6px 0 0 6px;box-shadow:0 0 7px var(--grn);}
+.scname{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--wht);margin-bottom:2px;}
+.scmeta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);}
+.sctimer{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--grn);text-shadow:0 0 5px var(--grn);}
+.scbill{font-size:11px;color:var(--amb);}
+.nosess{text-align:center;padding:20px;color:var(--mut);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;border:1px dashed var(--brd);border-radius:6px;}
+
+/* ── ADMIN ── */
+.adm-wrap{max-width:1300px;margin:0 auto;padding:24px 20px;}
+.adm-gate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 0;}
+.adm-box{background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:24px 32px;text-align:center;}
+.adm-box-ttl{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--mut);letter-spacing:3px;margin-bottom:14px;text-transform:uppercase;}
+.adm-con{display:none;}.adm-con.open{display:block;}
+.sec-ttl{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);letter-spacing:4px;text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--brd);}
+
+/* STAT CARDS */
+.srow{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.scard2{flex:1;min-width:130px;background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden;}
+.scard2::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.scard2.grn::after{background:var(--grn);}.scard2.amb::after{background:var(--amb);}.scard2.red::after{background:var(--red);}.scard2.blu::after{background:var(--blu);}
+.sval{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--grn);text-shadow:0 0 10px var(--grn);}
+.sval.amb{color:var(--amb);text-shadow:0 0 10px var(--amb);}
+.sval.red{color:var(--red);text-shadow:0 0 10px var(--red);}
+.sval.blu{color:var(--blu);text-shadow:0 0 10px var(--blu);}
+.slbl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:2px;margin-top:3px;}
+
+/* TABS */
+.atabs{display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap;}
+.atab{padding:5px 14px;border:1px solid var(--brd);background:none;color:var(--mut);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:2px;transition:all .2s;}
+.atab:hover{color:var(--txt);}
+.atab.active{color:var(--grn);border-color:var(--grn);background:var(--ggl);}
+.asec{display:none;}.asec.active{display:block;}
+
+/* CARD + TABLE */
+.card{background:var(--sur);border:1px solid var(--brd);border-radius:8px;padding:16px;}
+.adm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:800px){.adm-grid{grid-template-columns:1fr;}}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px;}
+.dtbl th{background:var(--pan);color:var(--mut);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--brd);}
+.dtbl td{padding:8px 10px;border-bottom:1px solid var(--brd);color:var(--txt);}
+.dtbl tr:last-child td{border-bottom:none;}
+.dtbl tr:hover td{background:rgba(0,230,118,.03);}
+.dtbl .amt{color:var(--amb);font-family:'Share Tech Mono',monospace;}
+.dtbl .grn{color:var(--grn);}
+.dtbl .mut{color:var(--mut);}
+.dtbl .rdt{color:var(--red);font-family:'Share Tech Mono',monospace;font-size:10px;}
+.mrow{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+input[type=month],input[type=text],input[type=number],input[type=password]{background:var(--pan);border:1px solid var(--brd);border-radius:4px;color:var(--txt);font-family:'Exo 2',sans-serif;font-size:12px;padding:6px 10px;outline:none;transition:border-color .2s;}
+input:focus{border-color:var(--grn);}
+select{background:var(--pan);border:1px solid var(--brd);border-radius:4px;color:var(--txt);font-size:12px;padding:6px 10px;outline:none;}
+.btn{padding:6px 16px;border:1px solid var(--grn);background:transparent;color:var(--grn);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all .2s;}
+.btn:hover{background:var(--ggl);}
+.btn.rd{border-color:var(--red);color:var(--red);}.btn.rd:hover{background:rgba(255,23,68,.1);}
+.btn.am{border-color:var(--amb);color:var(--amb);}.btn.am:hover{background:rgba(255,171,0,.1);}
+.btn.blu{border-color:var(--blu);color:var(--blu);}.btn.blu:hover{background:rgba(64,196,255,.1);}
+.frow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;}
+.fg{display:flex;flex-direction:column;gap:3px;}
+.fl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:2px;text-transform:uppercase;}
+.btot{display:flex;justify-content:flex-end;gap:18px;padding:8px;border-top:1px solid var(--brd);margin-top:6px;}
+.bi{font-family:'Share Tech Mono',monospace;font-size:12px;}
+.bl{color:var(--mut);}.bv{color:var(--amb);}
+.badge{display:inline-block;padding:2px 7px;border-radius:2px;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+.badge.act{background:rgba(0,230,118,.1);color:var(--grn);border:1px solid var(--grn);}
+.badge.ina{background:rgba(255,23,68,.1);color:var(--red);border:1px solid var(--red);}
+.adm-err{color:var(--red);font-family:'Share Tech Mono',monospace;font-size:10px;margin-top:6px;min-height:14px;}
+.adm-pin{text-align:center;font-size:22px;letter-spacing:8px;width:150px;font-family:'Share Tech Mono',monospace;}
+
+/* RATE EDIT INLINE */
+.rate-edit{display:flex;gap:6px;align-items:center;}
+.rate-input{width:70px;padding:3px 6px;font-size:11px;}
+.rate-btn{padding:3px 10px;font-size:10px;}
+
+/* CHART */
+.chart-wrap{padding:8px 0;}
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:180px;padding:0 4px;}
+.bar-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.bar{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .6s ease;position:relative;cursor:pointer;}
+.bar:hover::after{content:attr(data-tip);position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:#0a1a0a;border:1px solid var(--grn);color:var(--grn);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 6px;border-radius:3px;white-space:nowrap;z-index:10;}
+.bar-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--mut);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;max-width:52px;}
+.bar-val{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--amb);}
+.chart-empty{text-align:center;padding:40px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--mut);letter-spacing:2px;}
+
+
+/* FORCE END */
+.force-note{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);padding:8px;background:#1a0408;border:1px solid var(--red);border-radius:4px;margin-bottom:12px;}
+/* UAT RESULTS */
+.uat-section{margin-bottom:12px;}
+.uat-section-title{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);letter-spacing:3px;padding:8px 12px;background:var(--pan);border:1px solid var(--brd);border-radius:4px 4px 0 0;text-transform:uppercase;}
+.uat-tests{border:1px solid var(--brd);border-top:none;border-radius:0 0 4px 4px;overflow:hidden;}
+.uat-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--brd);font-size:12px;}
+.uat-row:last-child{border-bottom:none;}
+.uat-row:hover{background:rgba(0,230,118,.03);}
+.uat-icon{font-size:14px;width:20px;flex-shrink:0;}
+.uat-name{flex:1;font-family:'Exo 2',sans-serif;color:var(--txt);}
+.uat-detail{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.uat-pass{background:rgba(0,230,118,.05);}
+.uat-fail{background:rgba(255,23,68,.05);}
+
+/* ALERTS */
+.alert-card{background:var(--pan);border:1px solid var(--red);border-radius:6px;padding:12px;margin-bottom:8px;}
+.alert-title{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:6px;}
+.alert-item{font-family:'Exo 2',sans-serif;font-size:12px;color:var(--txt);padding:3px 0;}
+.no-alerts{text-align:center;padding:24px;color:var(--grn);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;border:1px dashed var(--brd);border-radius:6px;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="brand">DAGORETTI<span>/</span>KITCHEN<span>/</span>INCUBATOR</div>
+  <div class="ntabs">
+    <button class="ntab active" onclick="switchView('terminal',this)">⬛ Baker Terminal</button>
+    <button class="ntab" onclick="switchView('pinchange',this)">🔑 Change My PIN</button>
+    <button class="ntab" onclick="switchView('admin',this)">⚙ Admin</button>
+  </div>
+  <div class="dot"></div>
+</nav>
+
+<!-- ══ BAKER TERMINAL ════════════════════════════════════════════════════ -->
+<div class="view active" id="view-terminal">
+  <div class="term-layout">
+
+    <!-- LCD -->
+    <div class="lcd-unit">
+      <div class="lcd-housing">
+        <div class="lcd-screen">
+          <div class="lcd-row cg" id="L1">DAGORETTI KITCHEN</div>
+          <div class="lcd-row cd" id="L2">Enter 6-digit PIN</div>
+          <hr class="lcd-div">
+          <div class="lcd-row cd" id="L3" style="font-size:13px;"></div>
+          <div class="lcd-row cd" id="L4" style="font-size:12px;"></div>
+        </div>
+      </div>
+      <div class="state-bar"><div class="sled idle" id="sled"></div><span id="stxt">IDLE</span></div>
+    </div>
+
+    <!-- KEYPAD -->
+    <div class="kp-col">
+      <div class="kp-lbl">4×4 Keypad — 6-Digit PIN (1,000,000 combos)</div>
+      <div class="pips">
+        <span class="piplbl">ATTEMPTS</span>
+        <div class="pip ok" id="pip0"></div>
+        <div class="pip ok" id="pip1"></div>
+        <div class="pip ok" id="pip2"></div>
+      </div>
+      <div class="pin-box">
+        <div class="pdots">
+          <div class="pd" id="d0"></div><div class="pd" id="d1"></div>
+          <div class="pd" id="d2"></div><div class="pd" id="d3"></div>
+          <div class="pd" id="d4"></div><div class="pd" id="d5"></div>
+        </div>
+      </div>
+      <div class="lock-ban" id="lban">
+        <div class="ltitle">⚠ TERMINAL LOCKED</div>
+        <div class="lcnt" id="lcnt">30</div>
+        <div class="lsub">TOO MANY WRONG PINS</div>
+      </div>
+      <div class="keypad" id="keypad">
+        <button class="key" data-k="1">1</button><button class="key" data-k="2">2</button><button class="key" data-k="3">3</button>
+        <button class="key" data-k="4">4</button><button class="key" data-k="5">5</button><button class="key" data-k="6">6</button>
+        <button class="key" data-k="7">7</button><button class="key" data-k="8">8</button><button class="key" data-k="9">9</button>
+        <button class="key clr" data-k="C">CLR</button><button class="key" data-k="0">0</button>
+        <button class="key ent" data-k="E">ENTER ▶</button>
+      </div>
+      <div class="fb" id="fb"></div>
+    </div>
+
+    <!-- RIGHT: RECEIPT + ACTIVE SESSIONS -->
+    <div class="right-col">
+      <div class="receipt" id="receipt">
+        <div class="rec-hdr">
+          <span class="rec-ttl" id="rec-ttl">SESSION RECEIPT</span>
+          <button class="rec-cls" onclick="closeReceipt()">✕</button>
+        </div>
+        <div class="rec-body" id="rec-body"></div>
+      </div>
+      <div class="active-panel">
+        <div class="phdr"><div class="dot"></div><div class="pttl">Active Oven Sessions</div></div>
+        <div id="active-list"><div class="nosess">NO ACTIVE SESSIONS</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ BAKER PIN CHANGE VIEW ══════════════════════════════════════════════ -->
+<div class="view" id="view-pinchange">
+  <div style="max-width:500px;margin:60px auto;padding:0 24px;">
+
+    <!-- LCD style header -->
+    <div style="background:var(--lcd);border:2px solid #1a4a1a;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:18px;color:var(--grn);text-shadow:0 0 8px var(--grn);margin-bottom:4px;">PIN CHANGE REQUEST</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#1a5c1a;">Admin must approve your new PIN</div>
+    </div>
+
+    <div class="card">
+      <div class="sec-ttl">Request a New PIN</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);margin-bottom:16px;line-height:1.8;">
+        1. Enter your CURRENT 6-digit PIN to verify your identity<br>
+        2. Enter your NEW 6-digit PIN<br>
+        3. Confirm your new PIN<br>
+        4. Submit — the Oven Manager will approve it
+      </div>
+      <div class="fg" style="margin-bottom:12px;">
+        <div class="fl">Your Current PIN</div>
+        <input type="password" id="bk-old" placeholder="Current 6-digit PIN" maxlength="6" style="width:100%;">
+      </div>
+      <div class="fg" style="margin-bottom:12px;">
+        <div class="fl">New PIN</div>
+        <input type="password" id="bk-new" placeholder="New 6-digit PIN" maxlength="6" style="width:100%;">
+      </div>
+      <div class="fg" style="margin-bottom:16px;">
+        <div class="fl">Confirm New PIN</div>
+        <input type="password" id="bk-confirm" placeholder="Repeat new PIN" maxlength="6" style="width:100%;">
+      </div>
+      <button class="btn" onclick="requestPINChange()" style="width:100%;padding:10px;">SUBMIT PIN CHANGE REQUEST</button>
+      <div class="fb" id="baker-pin-fb" style="margin-top:12px;"></div>
+    </div>
+
+    <div style="margin-top:16px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);text-align:center;letter-spacing:2px;">
+      YOUR NEW PIN WILL ONLY WORK AFTER ADMIN APPROVAL
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN ═════════════════════════════════════════════════════════════ -->
+<div class="view" id="view-admin">
+  <div class="adm-wrap">
+
+    <div class="adm-gate" id="adm-gate">
+      <div class="adm-box">
+        <div class="adm-box-ttl">Admin Authentication</div>
+        <div class="fg" style="align-items:center;gap:10px;">
+          <input type="password" class="adm-pin" id="adm-pin" placeholder="••••" maxlength="6" onkeydown="if(event.key==='Enter')adminLogin()">
+          <button class="btn" onclick="adminLogin()">UNLOCK</button>
+        </div>
+        <div class="adm-err" id="adm-err"></div>
+        <div style="margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#1a4a1a;">ADMIN PIN: 0000 | BAKER PINs: 6 DIGITS</div>
+      </div>
+    </div>
+
+    <div class="adm-con" id="adm-con">
+
+      <!-- STAT CARDS -->
+      <div class="srow">
+        <div class="scard2 grn"><div class="sval" id="s1">–</div><div class="slbl">Active Sessions</div></div>
+        <div class="scard2 blu"><div class="sval blu" id="s2">–</div><div class="slbl">Total Bakers</div></div>
+        <div class="scard2 amb"><div class="sval amb" id="s3">–</div><div class="slbl">Sessions This Month</div></div>
+        <div class="scard2 amb"><div class="sval amb" id="s4">–</div><div class="slbl">Revenue (KES) This Month</div></div>
+        <div class="scard2 red"><div class="sval red" id="s5">–</div><div class="slbl">Failed Attempts This Month</div></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="atabs">
+        <button class="atab active" onclick="aTab('billing',this)">💰 Billing</button>
+        <button class="atab" onclick="aTab('chart',this)">📊 Revenue Chart</button>
+        <button class="atab" onclick="aTab('sessions',this)">📋 Sessions</button>
+        <button class="atab" onclick="aTab('bakers',this)">👥 Bakers</button>
+        <button class="atab" onclick="aTab('alerts',this)">🔔 Alerts</button>
+        <button class="atab" onclick="aTab('security',this)">🔒 Security</button>
+        <button class="atab" onclick="aTab('uat',this)">🧪 UAT Results</button>
+        <button class="atab" onclick="aTab('pinchange',this)">🔑 PIN Management</button>
+      </div>
+
+      <!-- BILLING TAB -->
+      <div class="asec active" id="tab-billing">
+        <div class="card">
+          <div class="mrow">
+            <div class="fg"><div class="fl">Month</div><input type="month" id="bill-month" onchange="loadBilling()"></div>
+            <button class="btn" onclick="loadBilling()">GENERATE</button>
+            <button class="btn blu" onclick="downloadCSV()">⬇ EXPORT CSV</button>
+          </div>
+          <div class="sec-ttl">Monthly Billing Summary</div>
+          <div style="overflow-x:auto;">
+            <table class="dtbl">
+              <thead><tr><th>Baker Name</th><th>Sessions</th><th>Total Hours</th><th>Total Minutes</th><th>Rate (KES/hr)</th><th>Amount Due (KES)</th></tr></thead>
+              <tbody id="bill-body"></tbody>
+            </table>
+          </div>
+          <div class="btot" id="bill-tot"></div>
+        </div>
+      </div>
+
+      <!-- CHART TAB -->
+      <div class="asec" id="tab-chart">
+        <div class="card">
+          <div class="mrow">
+            <div class="fg"><div class="fl">Month</div><input type="month" id="chart-month" onchange="loadChart()"></div>
+            <button class="btn" onclick="loadChart()">REFRESH</button>
+          </div>
+          <div class="sec-ttl">Revenue Per Baker — Bar Chart</div>
+          <div class="chart-wrap">
+            <div class="chart-bars" id="chart-bars">
+              <div class="chart-empty">NO DATA FOR THIS MONTH</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SESSIONS TAB -->
+      <div class="asec" id="tab-sessions">
+        <div class="card">
+          <div class="mrow">
+            <div class="fg"><div class="fl">Month</div><input type="month" id="sess-month" onchange="loadSessions()"></div>
+            <div class="fg"><div class="fl">Baker</div><select id="sess-baker" onchange="loadSessions()"><option value="">All Bakers</option></select></div>
+            <button class="btn" onclick="loadSessions()">REFRESH</button>
+          </div>
+          <div class="sec-ttl">Completed Sessions</div>
+          <div style="overflow-x:auto;">
+            <table class="dtbl"><thead><tr><th>#</th><th>Baker</th><th>Start</th><th>End</th><th>Duration</th><th>Amount (KES)</th></tr></thead><tbody id="sess-body"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BAKERS TAB -->
+      <div class="asec" id="tab-bakers">
+        <div class="adm-grid">
+          <div class="card">
+            <div class="sec-ttl">Add New Baker</div>
+            <div class="frow">
+              <div class="fg"><div class="fl">Full Name</div><input type="text" id="new-name" placeholder="Baker Name" style="width:160px;"></div>
+              <div class="fg"><div class="fl">PIN</div><input type="password" id="new-pin" placeholder="6 digits" maxlength="6" style="width:90px;"></div>
+              <div class="fg"><div class="fl">Rate KES/hr</div><input type="number" id="new-rate" value="50" style="width:80px;"></div>
+              <button class="btn" onclick="addBaker()" style="align-self:flex-end;">ADD</button>
+            </div>
+            <div class="fb" id="baker-fb"></div>
+          </div>
+          <div class="card">
+            <div class="sec-ttl">Baker Accounts — Edit Rate Inline</div>
+            <table class="dtbl">
+              <thead><tr><th>Name</th><th>Rate (KES/hr)</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="baker-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTS TAB -->
+      <div class="asec" id="tab-alerts">
+        <div class="mrow">
+          <div class="fg"><div class="fl">Month</div><input type="month" id="alert-month" onchange="loadAlerts()"></div>
+          <button class="btn" onclick="loadAlerts()">REFRESH</button>
+          <button class="btn rd" onclick="autoTimeout()">⚡ AUTO-TIMEOUT STUCK SESSIONS</button>
+        </div>
+        <div class="force-note">
+  ⚠ If a baker forgets their PIN and cannot log out:<br>
+  1. Find their active session card on the Baker Terminal tab<br>
+  2. Click <strong>⚠ FORCE END SESSION</strong> — billing is calculated automatically<br>
+  3. Or click <strong>⚡ AUTO-TIMEOUT</strong> above to close ALL sessions open longer than 8 hours
+</div>
+<div id="alerts-content"></div>
+      </div>
+
+      <!-- SECURITY TAB -->
+      <div class="asec" id="tab-security">
+        <div class="card">
+          <div class="sec-ttl">Failed Authentication Attempts</div>
+          <table class="dtbl"><thead><tr><th>#</th><th>Timestamp</th><th>Details</th></tr></thead><tbody id="sec-body"></tbody></table>
+        </div>
+      </div>
+
+
+      <!-- UAT RESULTS TAB -->
+      <div class="asec" id="tab-uat">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="sec-ttl">How to Run Tests</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--txt);line-height:2;">
+            1. Open a new terminal in the dagoretti folder<br>
+            2. Run: <span style="color:var(--grn);background:var(--pan);padding:2px 8px;border-radius:3px;">python test_system.py</span><br>    Note: System now uses 6-digit PINs (1,000,000 combinations)<br>
+            3. Wait ~35 seconds (includes lockout test)<br>
+            4. Click LOAD RESULTS below to see pass/fail
+          </div>
+        </div>
+        <div class="mrow">
+          <button class="btn" onclick="loadUAT()">⟳ LOAD RESULTS</button>
+          <span id="uat-run-at" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--mut);"></span>
+        </div>
+        <div id="uat-summary" style="display:none;margin-bottom:16px;">
+          <div class="srow">
+            <div class="scard2 grn"><div class="sval" id="uat-passed">–</div><div class="slbl">Tests Passed</div></div>
+            <div class="scard2 red"><div class="sval red" id="uat-failed">–</div><div class="slbl">Tests Failed</div></div>
+            <div class="scard2 amb"><div class="sval amb" id="uat-pct">–</div><div class="slbl">Pass Rate</div></div>
+            <div class="scard2 blu"><div class="sval blu" id="uat-total">–</div><div class="slbl">Total Tests</div></div>
+          </div>
+        </div>
+        <div id="uat-body"></div>
+      </div>
+
+      <!-- PIN MANAGEMENT TAB (Admin only) -->
+      <div class="asec" id="tab-pinchange">
+        <div class="adm-grid">
+
+          <!-- Admin PIN Change -->
+          <div class="card">
+            <div class="sec-ttl">Change Admin PIN</div>
+            <div class="force-note" style="margin-bottom:12px;">
+              🔐 Admin PIN stored as SHA-256 hash — never in plaintext.
+            </div>
+            <div class="frow">
+              <div class="fg"><div class="fl">Current PIN</div><input type="password" id="adm-cur" placeholder="Current PIN" maxlength="6" style="width:120px;"></div>
+              <div class="fg"><div class="fl">New PIN</div><input type="password" id="adm-new" placeholder="New PIN" maxlength="6" style="width:120px;"></div>
+              <button class="btn" onclick="changeAdminPIN()" style="align-self:flex-end;">CHANGE</button>
+            </div>
+            <div class="fb" id="adm-pin-fb"></div>
+          </div>
+
+          <!-- Info card -->
+          <div class="card">
+            <div class="sec-ttl">Baker PIN Change Requests</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--mut);line-height:2;">
+              Bakers submit PIN change requests from the<br>
+              <span style="color:var(--grn);">🔑 Change My PIN</span> tab (no admin access needed).<br><br>
+              Pending requests appear below for your approval.
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending PIN Change Requests -->
+        <div class="card">
+          <div class="mrow">
+            <div class="sec-ttl" style="margin-bottom:0;">Pending Baker PIN Change Requests</div>
+            <button class="btn" onclick="loadPINRequests()">REFRESH</button>
+          </div>
+          <div style="margin-top:12px;" id="pin-requests-list">
+            <div class="no-alerts">No pending PIN change requests ✓</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /adm-con -->
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let pin='', locked=false, attLeft=3, lockTmr=null, activeBid=null, elapsedTmr=null;
+const ym=(()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');})();
+
+// ── VIEWS ──────────────────────────────────────────────────────────────────
+function switchView(n,b){
+  if(n==='pinchange'&&b){// baker PIN change - no admin needed
+  }
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+n).classList.add('active'); b.classList.add('active');
+  if(n==='admin'&&document.getElementById('adm-con').classList.contains('open'))loadStats();
+}
+
+// ── LCD ────────────────────────────────────────────────────────────────────
+function lcd(r1,r2,r3,r4,c1,c2,c3,c4){
+  [[r1,c1,'L1'],[r2,c2,'L2'],[r3,c3,'L3'],[r4,c4,'L4']].forEach(([t,c,id])=>{
+    const el=document.getElementById(id);
+    el.textContent=(t||'').substring(0,18);
+    el.className='lcd-row '+(c||'');
+  });
+}
+function setState(s){document.getElementById('sled').className='sled '+s;document.getElementById('stxt').textContent=s.toUpperCase();}
+function lcdIdle(){
+  if(locked)return;
+  const n=new Date();
+  lcd('DAGORETTI KITCHEN','Enter 6-digit PIN',n.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),n.toTimeString().substring(0,8),'cg','cd','cd','cd');
+  setState('idle');
+}
+setInterval(()=>{if(!locked&&pin===''&&!activeBid)document.getElementById('L4').textContent=new Date().toTimeString().substring(0,8);},1000);
+
+// ── PIPS ───────────────────────────────────────────────────────────────────
+function setPips(n){for(let i=0;i<3;i++){const p=document.getElementById('pip'+i);p.className='pip';p.classList.add(i<n?'ok':(n===0?'gone':'used'));}}
+
+// ── LOCKOUT ────────────────────────────────────────────────────────────────
+function startLock(secs){
+  locked=true; let c=secs;
+  document.getElementById('lban').classList.add('show');
+  document.querySelectorAll('.key').forEach(k=>k.classList.add('disabled'));
+  document.getElementById('lcnt').textContent=c; setPips(0); setState('locked');
+  lcd('!! LOCKED !!','Wait '+c+'s','Wrong PIN x3','Please wait...','cr','ca','cd','cd');
+  clearInterval(lockTmr);
+  lockTmr=setInterval(()=>{
+    c--; document.getElementById('lcnt').textContent=c;
+    lcd('!! LOCKED !!','Wait '+c+'s','Wrong PIN x3','Please wait...','cr','ca','cd','cd');
+    if(c<=0){
+      clearInterval(lockTmr); locked=false; attLeft=3;
+      document.getElementById('lban').classList.remove('show');
+      document.querySelectorAll('.key').forEach(k=>k.classList.remove('disabled'));
+      setPips(3); hideFb(); lcdIdle();
+    }
+  },1000);
+}
+
+// ── KEYPAD ─────────────────────────────────────────────────────────────────
+document.getElementById('keypad').addEventListener('click',e=>{
+  const k=e.target.closest('.key');
+  if(!k||locked)return;
+  handleKey(k.dataset.k);
+  k.classList.add('pressed'); setTimeout(()=>k.classList.remove('pressed'),140);
+});
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('view-terminal').classList.contains('active')||locked)return;
+  if(e.key>='0'&&e.key<='9')handleKey(e.key);
+  else if(e.key==='Enter')handleKey('E');
+  else if(e.key==='Backspace'||e.key.toLowerCase()==='c')handleKey('C');
+});
+function handleKey(k){
+  if(k==='C'){pin='';updateDots();lcdIdle();hideFb();return;}
+  if(k==='E'){submit();return;}
+  if(pin.length<6&&k>='0'&&k<='9'){pin+=k;updateDots();
+    if(pin.length===1)lcd('DAGORETTI KITCHEN','Entering 6-digit PIN','','','cg','cd','','');
+    if(pin.length===6)lcd('DAGORETTI KITCHEN','Press ENTER...','','','cg','cd','','');
+  }
+}
+function updateDots(){for(let i=0;i<6;i++)document.getElementById('d'+i).classList.toggle('on',i<pin.length);}
+
+// ── SUBMIT PIN ─────────────────────────────────────────────────────────────
+async function submit(){
+  if(pin.length!==6){showFb('Enter all 6 digits first','wrn');return;}
+  lcd('AUTHENTICATING','Please wait...','','','cg','cd','',''); setState('active');
+  try{
+    const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});
+    const d=await res.json(); pin=''; updateDots();
+    if(d.status==='login'){
+      attLeft=3; setPips(3); activeBid=d.baker_id;
+      const t=d.start_time.substring(11,19);
+      lcd('HI '+d.baker_name.split(' ')[0].toUpperCase()+'!','SESSION STARTED','Rate: KES '+d.hourly_rate+'/hr','6-digit PIN = LOGOUT','cg','cg','cd','cd');
+      setState('active'); showFb('✓ '+d.message,'ok');
+      showLoginReceipt(d); startElapsedLCD(d.baker_id,d.start_time);
+    }else if(d.status==='logout'){
+      attLeft=3; setPips(3); activeBid=null; clearInterval(elapsedTmr);
+      const m=Math.floor(d.duration_minutes),s=Math.round((d.duration_minutes%1)*60);
+      lcd(d.baker_name.split(' ')[0].toUpperCase()+' OUT',m+'m '+s+'s  KES '+d.amount_due,'Session complete','Thank you!','cg','ca','cd','cd');
+      setState('idle'); showFb('✓ '+d.message,'ok'); showLogoutReceipt(d);
+      setTimeout(lcdIdle,6000);
+    }else if(d.status==='wrong_pin'){
+      attLeft=d.attempts_remaining; setPips(attLeft);
+      lcd('ACCESS DENIED','Wrong PIN!',attLeft+' attempt'+(attLeft!==1?'s':'')+' left','CLR and retry','cr','cr','ca','cd');
+      setState('error'); showFb('✗ '+d.message,'err');
+      const h=document.querySelector('.lcd-housing');
+      h.style.borderColor='var(--red)'; setTimeout(()=>h.style.borderColor='',700);
+      setTimeout(lcdIdle,4000);
+    }else if(d.status==='locked'){
+      startLock(d.seconds_remaining); showFb('✗ '+d.message,'err');
+    }
+    loadActive();
+  }catch(e){showFb('Server error — is app.py running?','err');lcd('SERVER ERROR','Check backend','','','cr','','','');}
+}
+
+// ── ELAPSED LCD ────────────────────────────────────────────────────────────
+function startElapsedLCD(bid,startTime){
+  clearInterval(elapsedTmr);
+  elapsedTmr=setInterval(async()=>{
+    if(!activeBid)return;
+    try{
+      const d=await fetch('/api/elapsed/'+bid).then(r=>r.json());
+      if(!d.active){clearInterval(elapsedTmr);return;}
+      document.getElementById('L3').textContent=('Elapsed: '+d.elapsed_display).substring(0,18);
+      document.getElementById('L3').className='lcd-row cd';
+      document.getElementById('L4').textContent=('Bill: KES '+d.running_bill).substring(0,18);
+      document.getElementById('L4').className='lcd-row ca';
+    }catch(e){}
+  },2000);
+}
+
+// ── RECEIPTS ───────────────────────────────────────────────────────────────
+function showLoginReceipt(d){
+  const h=d.session_history||[];
+  document.getElementById('rec-ttl').textContent='SESSION STARTED';
+  document.getElementById('rec-body').innerHTML=`
+    <div class="rrow"><span class="rk">BAKER</span><span class="rv grn">${d.baker_name}</span></div>
+    <div class="rrow"><span class="rk">START TIME</span><span class="rv">${d.start_time.substring(11,19)}</span></div>
+    <div class="rrow"><span class="rk">RATE</span><span class="rv">KES ${d.hourly_rate}/hr</span></div>
+    ${h.length?`<div class="hist"><div class="hist-ttl">LAST ${h.length} SESSIONS</div>${h.map(s=>`<div class="hrow"><span class="hd">${s.StartTime.substring(5,10)}</span><span class="hdu">${s.DurationMinutes?Math.round(s.DurationMinutes)+'min':'–'}</span><span class="hamt">KES ${s.AmountDue||0}</span></div>`).join('')}</div>`:''}
+  `;
+  document.getElementById('receipt').classList.add('show');
+}
+function showLogoutReceipt(d){
+  const h=d.session_history||[];
+  const tot=h.reduce((a,s)=>a+(s.AmountDue||0),0);
+  document.getElementById('rec-ttl').textContent='SESSION RECEIPT';
+  document.getElementById('rec-body').innerHTML=`
+    <div class="rrow"><span class="rk">BAKER</span><span class="rv grn">${d.baker_name}</span></div>
+    <div class="rrow"><span class="rk">START</span><span class="rv">${d.start_time.substring(11,19)}</span></div>
+    <div class="rrow"><span class="rk">END</span><span class="rv">${d.end_time.substring(11,19)}</span></div>
+    <div class="rrow"><span class="rk">DURATION</span><span class="rv">${d.duration_display}</span></div>
+    <div class="rrow"><span class="rk">THIS SESSION</span><span class="rv big">KES ${d.amount_due}</span></div>
+    ${h.length?`<div class="hist"><div class="hist-ttl">SESSION HISTORY</div>${h.map(s=>`<div class="hrow"><span class="hd">${s.StartTime.substring(5,10)}</span><span class="hdu">${s.DurationMinutes?Math.round(s.DurationMinutes)+'min':'–'}</span><span class="hamt">KES ${s.AmountDue||0}</span></div>`).join('')}<div class="rrow" style="margin-top:6px;"><span class="rk">MONTH TOTAL</span><span class="rv big">KES ${tot.toFixed(2)}</span></div></div>`:''}
+  `;
+  document.getElementById('receipt').classList.add('show');
+}
+function closeReceipt(){document.getElementById('receipt').classList.remove('show');}
+
+// ── ACTIVE SESSIONS ────────────────────────────────────────────────────────
+async function loadActive(){
+  try{
+    const d=await fetch('/api/active_sessions').then(r=>r.json());
+    const el=document.getElementById('active-list');
+    if(!d.length){el.innerHTML='<div class="nosess">NO ACTIVE SESSIONS</div>';return;}
+    el.innerHTML=d.map(s=>`
+      <div class="scard">
+        <div class="scname">${s.baker_name}</div>
+        <div class="scmeta">Started: ${toEAT(s.start_time).substring(11,19)}</div>
+        <div class="sctimer" data-ts="${Math.round(Date.now()/1000)-s.elapsed_seconds}">${s.elapsed_seconds}s</div>
+        <div class="scbill">Running: KES ${s.running_bill}</div>
+        <button class="btn rd" style="padding:3px 10px;font-size:10px;margin-top:6px;width:100%;"
+          onclick="forceEnd(${s.session_id},'${s.baker_name}')">⚠ FORCE END SESSION</button>
+      </div>`).join('');
+  }catch(e){}
+}
+setInterval(()=>{document.querySelectorAll('.sctimer').forEach(el=>{const e=Math.round(Date.now()/1000)-parseInt(el.dataset.ts);el.textContent=Math.floor(e/60)+'m '+e%60+'s';});},1000);
+setInterval(loadActive,10000);
+
+// ── FEEDBACK ───────────────────────────────────────────────────────────────
+function showFb(msg,type){const el=document.getElementById('fb');el.textContent=msg;el.className='fb show '+type;}
+function hideFb(){document.getElementById('fb').className='fb';}
+
+// ── ADMIN ──────────────────────────────────────────────────────────────────
+async function adminLogin(){
+  const p=document.getElementById('adm-pin').value.trim();
+  const res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:p})});
+  if(res.ok){
+    document.getElementById('adm-gate').style.display='none';
+    document.getElementById('adm-con').classList.add('open');
+    loadStats(); loadBilling(); loadChart();
+    // set default months
+    document.getElementById('bill-month').value=ym;
+    document.getElementById('chart-month').value=ym;
+    document.getElementById('sess-month').value=ym;
+    document.getElementById('alert-month').value=ym;
+    loadBakers();
+  } else document.getElementById('adm-err').textContent='Incorrect admin PIN';
+}
+document.getElementById('adm-pin').addEventListener('keydown',e=>{if(e.key==='Enter')adminLogin();});
+
+function aTab(n,b){
+  document.querySelectorAll('.asec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.atab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active'); b.classList.add('active');
+  if(n==='sessions')loadSessions();
+  else if(n==='bakers')loadBakers();
+  else if(n==='security')loadSecurity();
+  else if(n==='uat')loadUAT();
+  else if(n==='pinchange')loadPINRequests();
+  else if(n==='billing')loadBilling();
+  else if(n==='chart')loadChart();
+  else if(n==='alerts')loadAlerts();
+}
+
+// STATS
+async function loadStats(){
+  try{
+    const month=document.getElementById('bill-month')?.value||ym;
+    const d=await fetch('/api/admin/summary?month='+month).then(r=>r.json());
+    document.getElementById('s1').textContent=d.active_sessions;
+    document.getElementById('s2').textContent=d.total_bakers;
+    document.getElementById('s3').textContent=d.month_sessions;
+    document.getElementById('s4').textContent='KES '+d.month_revenue.toFixed(0);
+    document.getElementById('s5').textContent=d.month_failed_attempts;
+  }catch(e){}
+}
+
+// BILLING
+async function loadBilling(){
+  const month=document.getElementById('bill-month').value||ym;
+  try{
+    const d=await fetch('/api/admin/billing?month='+month).then(r=>r.json());
+    document.getElementById('bill-body').innerHTML=d.billing.map(b=>`<tr><td>${b.baker_name}</td><td class="grn">${b.session_count}</td><td>${b.total_hours.toFixed(2)}</td><td class="mut">${b.total_minutes.toFixed(1)}</td><td class="mut">${b.hourly_rate.toFixed(0)}</td><td class="amt">${b.total_amount.toFixed(2)}</td></tr>`).join('');
+    const totRev=d.billing.reduce((a,b)=>a+b.total_amount,0);
+    const totHrs=d.billing.reduce((a,b)=>a+b.total_hours,0);
+    document.getElementById('bill-tot').innerHTML=`<span class="bi"><span class="bl">Total Hours: </span><span class="bv">${totHrs.toFixed(2)}</span></span><span class="bi"><span class="bl">Total Revenue: </span><span class="bv">KES ${totRev.toFixed(2)}</span></span>`;
+    loadStats();
+  }catch(e){}
+}
+
+// CSV EXPORT
+function downloadCSV(){
+  const month=document.getElementById('bill-month').value||ym;
+  window.location.href='/api/admin/billing/csv?month='+month;
+}
+
+// REVENUE CHART
+async function loadChart(){
+  const month=document.getElementById('chart-month').value||ym;
+  try{
+    const d=await fetch('/api/admin/revenue_chart?month='+month).then(r=>r.json());
+    const el=document.getElementById('chart-bars');
+    const maxRev=Math.max(...d.revenue,1);
+    if(d.revenue.every(v=>v===0)){el.innerHTML='<div class="chart-empty">NO REVENUE DATA FOR THIS MONTH</div>';return;}
+    // colour palette for bars
+    const colours=['#00e676','#40c4ff','#ffab00','#ff6d00','#ea80fc','#69f0ae','#ff6e40','#b2ff59','#ffd740','#ff4081'];
+    el.innerHTML=d.labels.map((name,i)=>{
+      const h=Math.max(4,Math.round((d.revenue[i]/maxRev)*160));
+      const col=colours[i%colours.length];
+      return `<div class="bar-item">
+        <span class="bar-val">KES ${d.revenue[i]}</span>
+        <div class="bar" style="height:${h}px;background:${col};box-shadow:0 0 8px ${col}40;"
+             data-tip="${name}: KES ${d.revenue[i]} | ${d.sessions[i]} sessions | ${d.minutes[i]}min"></div>
+        <span class="bar-lbl">${name}</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+// SESSIONS
+async function loadSessions(){
+  const month=document.getElementById('sess-month').value||ym;
+  const baker=document.getElementById('sess-baker').value;
+  try{
+    const d=await fetch('/api/admin/sessions?month='+month+'&baker_id='+baker).then(r=>r.json());
+    document.getElementById('sess-body').innerHTML=d.map((s,i)=>`<tr><td class="mut">${i+1}</td><td>${s.fullname||s.FullName}</td><td>${s.starttime||s.StartTime}</td><td>${s.endtime||s.EndTime}</td><td>${(s.durationminutes||s.DurationMinutes)?Number(s.durationminutes||s.DurationMinutes).toFixed(1)+' min':'–'}</td><td class="amt">${(s.amountdue||s.AmountDue)?Number(s.amountdue||s.AmountDue).toFixed(2):'–'}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--mut);padding:18px;">No sessions found</td></tr>';
+  }catch(e){}
+}
+
+// BAKERS
+async function loadBakers(){
+  try{
+    const d=await fetch('/api/admin/bakers').then(r=>r.json());
+    const sel=document.getElementById('sess-baker'); const cur=sel.value;
+    sel.innerHTML='<option value="">All Bakers</option>'+d.map(b=>`<option value="${b.BakerID||b.bakerid}">${b.FullName||b.fullname}</option>`).join('');
+    sel.value=cur;
+    document.getElementById('baker-body').innerHTML=d.map(b=>{
+      const name=b.FullName||b.fullname||'?';
+      const rate=b.HourlyRate||b.hourlyrate||50;
+      const bid=b.BakerID||b.bakerid;
+      const active=b.IsActive!==undefined?b.IsActive:b.isactive;
+      return `<tr>
+        <td>${name}</td>
+        <td><div class="rate-edit">
+          <input type="number" class="rate-input" id="rate-${bid}" value="${rate}" min="1" step="5">
+          <button class="btn rate-btn" onclick="updateRate(${bid})">SAVE</button>
+        </div></td>
+        <td><span class="badge ${active?'act':'ina'}">${active?'ACTIVE':'INACTIVE'}</span></td>
+        <td><button class="btn ${active?'rd':'am'}" style="padding:3px 10px;font-size:10px;" onclick="toggleBaker(${bid})">${active?'DEACTIVATE':'ACTIVATE'}</button></td>
+      </tr>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function addBaker(){
+  const name=document.getElementById('new-name').value.trim(),p=document.getElementById('new-pin').value.trim(),rate=document.getElementById('new-rate').value;
+  const fb=document.getElementById('baker-fb');
+  const res=await fetch('/api/admin/bakers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,pin:p,rate})});
+  const data=await res.json();
+  fb.className='fb show '+(res.ok?'ok':'err');
+  fb.textContent=res.ok?'✓ '+data.message:'✗ '+data.error;
+  if(res.ok){document.getElementById('new-name').value='';document.getElementById('new-pin').value='';loadBakers();}
+}
+
+async function toggleBaker(id){await fetch('/api/admin/bakers/'+id+'/toggle',{method:'POST'});loadBakers();}
+
+// UPDATE RATE (NEW Week 9)
+async function updateRate(id){
+  const rate=document.getElementById('rate-'+id).value;
+  const res=await fetch('/api/admin/bakers/'+id+'/rate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rate})});
+  const data=await res.json();
+  if(res.ok){
+    // flash green
+    const inp=document.getElementById('rate-'+id);
+    inp.style.borderColor='var(--grn)'; setTimeout(()=>inp.style.borderColor='',1500);
+  }
+}
+
+// ALERTS
+async function loadAlerts(){
+  const month=document.getElementById('alert-month').value||ym;
+  try{
+    const d=await fetch('/api/admin/alerts?month='+month).then(r=>r.json());
+    const el=document.getElementById('alerts-content');
+    let html='';
+    if(d.stuck_sessions.length){
+      html+=`<div class="alert-card"><div class="alert-title">⚠ STUCK SESSIONS — Active for over 4 hours (baker may have forgotten to log out)</div>
+        ${d.stuck_sessions.map(a=>`<div class="alert-item">• ${a.name} — started ${a.start}</div>`).join('')}</div>`;
+    }
+    if(d.zero_amount.length){
+      html+=`<div class="alert-card"><div class="alert-title">⚠ ZERO AMOUNT SESSIONS — Sessions recorded but KES 0 billed this month</div>
+        ${d.zero_amount.map(a=>`<div class="alert-item">• ${a.name} — ${a.sessions} session(s)</div>`).join('')}</div>`;
+    }
+    if(!html) html='<div class="no-alerts">✓ NO ALERTS — All sessions are billing correctly</div>';
+    el.innerHTML=html;
+  }catch(e){}
+}
+
+// SECURITY
+async function loadSecurity(){
+  try{
+    const d=await fetch('/api/admin/failed_attempts').then(r=>r.json());
+    document.getElementById('sec-body').innerHTML=d.map((a,i)=>`<tr><td class="mut">${i+1}</td><td>${toEAT(a.AttemptedAt||a.attemptedat)}</td><td class="rdt">${a.Note||a.note}</td></tr>`).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--mut);padding:18px;">No failed attempts ✓</td></tr>';
+  }catch(e){}
+}
+
+// INIT
+lcdIdle(); setPips(3); loadActive();
+setInterval(loadStats,15000);
+// UAT RESULTS
+async function loadUAT(){
+  try{
+    const d = await fetch('/api/test_results').then(r=>r.json());
+    if(d.error){document.getElementById('uat-body').innerHTML=`<div class="no-alerts" style="color:var(--amb);">${d.error}</div>`;return;}
+    document.getElementById('uat-summary').style.display='block';
+    document.getElementById('uat-passed').textContent=d.passed;
+    document.getElementById('uat-failed').textContent=d.failed;
+    document.getElementById('uat-pct').textContent=d.pct+'%';
+    document.getElementById('uat-total').textContent=d.total;
+    document.getElementById('uat-run-at').textContent='Last run: '+d.run_at;
+    // Group by section
+    const sections={};
+    d.results.forEach(r=>{
+      const sec=r.name.match(/^[A-Z]/)? 'General' : 'Tests';
+      if(!sections[sec])sections[sec]=[];
+      sections[sec].push(r);
+    });
+    // Build test list
+    const html=d.results.map(r=>`
+      <div class="uat-row ${r.passed?'uat-pass':'uat-fail'}">
+        <span class="uat-icon">${r.passed?'✅':'❌'}</span>
+        <span class="uat-name">${r.name}</span>
+        ${!r.passed&&r.detail?`<span class="uat-detail">${r.detail}</span>`:''}
+      </div>`).join('');
+    document.getElementById('uat-body').innerHTML=`<div class="uat-section"><div class="uat-tests">${html}</div></div>`;
+  }catch(e){
+    document.getElementById('uat-body').innerHTML='<div class="no-alerts" style="color:var(--amb);">Could not load results. Run test_system.py first.</div>';
+  }
+}
+
+// FORCE END SESSION (admin closes stuck session)
+async function forceEnd(sessionId, bakerName){
+  if(!confirm(`Force-end ${bakerName}'s session?\nThis will calculate and record their billing now.`)) return;
+  try{
+    const res = await fetch('/api/admin/sessions/'+sessionId+'/force_end', {method:'POST'});
+    const d   = await res.json();
+    if(res.ok){
+      // Show result on LCD if on terminal view
+      lcd('SESSION FORCE ENDED',bakerName.split(' ')[0].toUpperCase()+' OUT',d.duration_display,'KES '+d.amount_due,'cr','ca','ca','ca');
+      setState('idle');
+      setTimeout(lcdIdle, 5000);
+      alert('✓ '+d.message);
+      loadActive();
+    } else {
+      alert('Error: '+d.error);
+    }
+  }catch(e){ alert('Server error'); }
+}
+
+// AUTO-TIMEOUT (close all sessions open >8 hours)
+async function autoTimeout(){
+  try{
+    const res = await fetch('/api/admin/auto_timeout', {method:'POST'});
+    const d   = await res.json();
+    alert(d.message);
+    loadActive();
+    loadAlerts();
+  }catch(e){ alert('Server error'); }
+}
+
+// CHANGE ADMIN PIN
+async function changeAdminPIN(){
+  const cur = document.getElementById('adm-cur').value.trim();
+  const nw  = document.getElementById('adm-new').value.trim();
+  const fb  = document.getElementById('adm-pin-fb');
+  const res = await fetch('/api/admin/change_pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_pin:cur,new_pin:nw})});
+  const d   = await res.json();
+  fb.className = 'fb show '+(res.ok?'ok':'err');
+  fb.textContent = res.ok ? '✓ '+d.message : '✗ '+d.error;
+  if(res.ok){document.getElementById('adm-cur').value='';document.getElementById('adm-new').value='';}
+}
+
+// BAKER REQUEST PIN CHANGE
+async function requestPINChange(){
+  const old_pin = document.getElementById('bk-old').value.trim();
+  const new_pin = document.getElementById('bk-new').value.trim();
+  const confirm = document.getElementById('bk-confirm').value.trim();
+  const fb = document.getElementById('baker-pin-fb');
+  const res = await fetch('/api/baker/request_pin_change',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_pin,new_pin,confirm_pin:confirm})});
+  const d = await res.json();
+  fb.className = 'fb show '+(res.ok?'ok':'err');
+  if(res.ok){
+    fb.textContent = '✓ Request submitted successfully! Waiting for admin approval.';
+    document.getElementById('bk-old').value='';
+    document.getElementById('bk-new').value='';
+    document.getElementById('bk-confirm').value='';
+    loadPINRequests();
+    // Keep success message visible for 8 seconds
+    setTimeout(()=>{fb.className='fb';fb.textContent='';}, 8000);
+  } else {
+    fb.textContent = '✗ '+( d.error||d.message||'Something went wrong');
+  }
+}
+
+// LOAD PENDING PIN REQUESTS
+async function loadPINRequests(){
+  try{
+    const d = await fetch('/api/admin/pin_requests').then(r=>r.json());
+    if(d.length) console.log('PIN request keys:', Object.keys(d[0]), 'first:', d[0]);
+    const el = document.getElementById('pin-requests-list');
+    // Update PIN Management tab button to show count
+    const pinTab = document.querySelector('[onclick*="pinchange"]');
+    if(pinTab) pinTab.textContent = d.length > 0 ? `🔑 PIN Management (${d.length})` : '🔑 PIN Management';
+    if(!d.length){el.innerHTML='<div class="no-alerts">No pending PIN change requests ✓</div>';return;}
+    el.innerHTML = '<table class="dtbl"><thead><tr><th>#</th><th>Baker</th><th>Requested At</th><th>Action</th></tr></thead><tbody>'+
+      d.map((r,i)=>`<tr>
+        <td class="mut">${i+1}</td>
+        <td>${r.FullName||r.fullname||"Unknown"}</td>
+        <td>${toEAT(r.RequestedAt||r.requestedat||"")}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn" style="padding:3px 10px;font-size:10px;" onclick="approvePIN(${r.RequestID||r.requestid||0})">✓ APPROVE</button>
+          <button class="btn rd" style="padding:3px 10px;font-size:10px;" onclick="rejectPIN(${r.RequestID||r.requestid||0})">✗ REJECT</button>
+        </td>
+      </tr>`).join('')+'</tbody></table>';
+  }catch(e){}
+}
+
+async function approvePIN(id){
+  const res = await fetch('/api/admin/pin_requests/'+id+'/approve',{method:'POST'});
+  const d = await res.json();
+  const el = document.getElementById('pin-requests-list');
+  if(res.ok){
+    // Show inline success instead of alert
+    el.insertAdjacentHTML('beforebegin','<div class="fb show ok" style="margin-bottom:8px;">✓ '+(d.message||'PIN change approved!')+'</div>');
+    setTimeout(()=>{ const msg=document.querySelector('.fb.show.ok'); if(msg)msg.remove(); }, 5000);
+  } else {
+    alert('✗ '+(d.error||'Failed to approve'));
+  }
+  loadPINRequests();
+}
+
+async function rejectPIN(id){
+  const res = await fetch('/api/admin/pin_requests/'+id+'/reject',{method:'POST'});
+  const d = await res.json();
+  const el = document.getElementById('pin-requests-list');
+  el.insertAdjacentHTML('beforebegin','<div class="fb show" style="margin-bottom:8px;background:#2a0a0a;border-color:#c00;">✗ Request rejected.</div>');
+  setTimeout(()=>{ const msg=document.querySelector('.fb.show'); if(msg)msg.remove(); }, 4000);
+  loadPINRequests();
+}
+
+// Convert UTC time string to EAT (Nairobi, UTC+3) for display
+function toEAT(utcStr) {
+  if (!utcStr || utcStr === '–') return utcStr;
+  try {
+    // Parse as UTC
+    const d = new Date(utcStr.replace(' ', 'T') + 'Z');
+    // Format as local string with EAT offset
+    const eat = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+    const pad = n => String(n).padStart(2,'0');
+    return `${eat.getUTCFullYear()}-${pad(eat.getUTCMonth()+1)}-${pad(eat.getUTCDate())} ${pad(eat.getUTCHours())}:${pad(eat.getUTCMinutes())}:${pad(eat.getUTCSeconds())}`;
+  } catch(e) { return utcStr; }
+}
+
+</script>
+</body>
+</html>
